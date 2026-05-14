@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basketball Sub Planner</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    header { background: #1e293b; padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 3px solid #f97316; }
+    .header-icon { font-size: 1.8rem; }
+    .header-text h1 { font-size: 1.4rem; font-weight: 800; color: #f97316; }
+    .header-text p { color: #64748b; font-size: 0.8rem; margin-top: 2px; }
+
+    .container { max-width: 820px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+    .card { background: #1e293b; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .card-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: #f97316; font-weight: 700; margin-bottom: 1rem; }
+
+    /* Roster picker */
+    .roster-hint { font-size: 0.82rem; color: #64748b; margin-bottom: 1rem; }
+    .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.6rem; margin-bottom: 1.1rem; }
+    .player-toggle { background: #0f172a; border: 2px solid #334155; border-radius: 10px; padding: 0.65rem 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.6rem; transition: border-color 0.15s, background 0.15s; user-select: none; -webkit-user-select: none; }
+    .player-toggle:hover { border-color: #475569; }
+    .player-toggle.selected { background: #1a3a1a; border-color: #4ade80; }
+    .player-toggle .jersey { font-size: 1rem; font-weight: 800; color: #475569; min-width: 28px; transition: color 0.15s; }
+    .player-toggle.selected .jersey { color: #4ade80; }
+    .player-toggle .pname { font-size: 0.85rem; font-weight: 600; color: #94a3b8; transition: color 0.15s; }
+    .player-toggle.selected .pname { color: #e2e8f0; }
+    .player-toggle .check { margin-left: auto; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #334155; flex-shrink: 0; transition: background 0.15s, border-color 0.15s; }
+    .player-toggle.selected .check { background: #4ade80; border-color: #4ade80; }
+
+    .selection-status { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+    .selection-count { font-size: 0.85rem; font-weight: 700; }
+    .selection-count.valid { color: #4ade80; }
+    .selection-count.invalid { color: #f87171; }
+    .selection-hint { font-size: 0.75rem; color: #475569; }
+
+    .btn-primary { background: #f97316; color: white; border: none; border-radius: 10px; padding: 0.8rem 1.5rem; font-size: 0.95rem; font-weight: 700; cursor: pointer; width: 100%; letter-spacing: 0.3px; transition: background 0.15s; }
+    .btn-primary:hover { background: #ea6c0a; }
+    .btn-sm { background: #1e3a5f; color: #93c5fd; border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .btn-sm:hover { background: #1e40af; }
+    .btn-row { display: flex; gap: 0.6rem; margin-bottom: 1.25rem; }
+
+    /* Substitution list */
+    .quarter-section { margin-bottom: 1rem; }
+    .quarter-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+    .quarter-badge { background: #f97316; color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 20px; letter-spacing: 0.5px; }
+    .quarter-subline { font-size: 0.75rem; color: #475569; }
+
+    .sub-block { display: flex; align-items: stretch; gap: 0; margin-bottom: 0.4rem; border-radius: 8px; overflow: hidden; }
+    .sub-time-pill { background: #0f172a; color: #64748b; font-size: 0.72rem; font-weight: 700; padding: 0.5rem 0.6rem; display: flex; align-items: center; min-width: 52px; justify-content: center; border-right: 1px solid #1e293b; letter-spacing: 0.3px; }
+    .sub-content { flex: 1; background: #0f172a; padding: 0.45rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .sub-lineup-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; flex-wrap: wrap; }
+    .sub-in-label { color: #4ade80; font-weight: 700; font-size: 0.7rem; }
+    .sub-out-label { color: #f87171; font-weight: 700; font-size: 0.7rem; }
+    .sub-name-in { color: #4ade80; font-weight: 600; }
+    .sub-name-out { color: #f87171; font-weight: 600; }
+    .sub-separator { color: #334155; }
+
+    .lineup-block { background: #0f172a; border-radius: 8px; padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; }
+    .lineup-label { font-size: 0.68rem; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.35rem; font-weight: 700; }
+    .lineup-names { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .lineup-chip { background: #16a34a22; color: #4ade80; font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 20px; border: 1px solid #16a34a44; }
+    .bench-chip { background: #dc262622; color: #f87171; font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 20px; border: 1px solid #dc262244; }
+
+    /* Schedule grid */
+    .grid-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+    th { background: #0f172a; color: #64748b; padding: 0.5rem 0.4rem; text-align: center; font-weight: 600; border: 1px solid #1e293b; white-space: nowrap; font-size: 0.72rem; letter-spacing: 0.3px; }
+    td { padding: 0.45rem 0.4rem; text-align: center; border: 1px solid #1e293b; font-weight: 600; font-size: 0.78rem; }
+    td.on { background: #16a34a22; color: #4ade80; }
+    td.off { background: #1e293b; color: #475569; }
+    td.time-cell { color: #64748b; font-size: 0.72rem; background: #0f172a; white-space: nowrap; text-align: left; padding-left: 0.6rem; }
+    tr.q-start td { border-top: 2px solid #f97316; }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.6rem; }
+    .stat-card { background: #0f172a; border-radius: 8px; padding: 0.75rem; text-align: center; }
+    .stat-name { font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.3rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .stat-minutes { font-size: 1.6rem; font-weight: 800; color: #4ade80; line-height: 1; }
+    .stat-label { font-size: 0.7rem; color: #475569; margin-top: 0.15rem; }
+    .stat-bench { font-size: 0.7rem; color: #f87171; margin-top: 0.25rem; }
+
+    #output { display: none; }
+
+    @media (max-width: 500px) {
+      .header-text h1 { font-size: 1.1rem; }
+      .players-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media print {
+      body { background: white; color: #111; }
+      header { background: white; border-bottom: 3px solid #f97316; }
+      header .header-text h1 { color: #f97316; }
+      .card { background: white; border: 1px solid #e2e8f0; box-shadow: none; }
+      .btn-row, #setup { display: none !important; }
+      #output { display: block !important; }
+      td.on { background: #d4edda !important; color: #155724 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      td.off { background: #f8f9fa !important; color: #aaa !important; }
+      .lineup-chip { background: #d4edda !important; color: #155724 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .bench-chip { background: #f8d7da !important; color: #721c24 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .sub-name-in { color: #155724 !important; }
+      .sub-name-out { color: #721c24 !important; }
+      .quarter-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .stat-minutes { color: #155724 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🏀</div>
+  <div class="header-text">
+    <h1>Basketball Sub Planner</h1>
+    <p>4 quarters &middot; 10 min each &middot; equal time &middot; max 5 min bench</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="card" id="setup">
+    <div class="card-title">Select Players</div>
+    <p class="roster-hint">Tap players who are available today. Select 6–9.</p>
+    <div class="roster-grid" id="roster-grid"></div>
+    <div class="selection-status">
+      <span class="selection-count" id="sel-count">0 selected</span>
+      <span class="selection-hint" id="sel-hint">Select 6 to 9 players</span>
+    </div>
+    <button class="btn-primary" id="btn-generate" onclick="generate()" disabled>Generate Substitution Schedule</button>
+  </div>
+
+  <div id="output">
+    <div class="btn-row">
+      <button class="btn-sm" onclick="generate()">&#x21bb; Regenerate</button>
+      <button class="btn-sm" onclick="window.print()">&#x1F5A8; Print</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Substitution Plan</div>
+      <div id="subs-content"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Full Schedule Grid</div>
+      <div class="grid-scroll">
+        <table id="grid-table"></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Playing Time</div>
+      <div class="stats-row" id="stats-content"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Each game = 8 slots of 5 minutes. Quarter breaks at slots 0,2,4,6.
+  // Slot 0 = Q1 0:00-5:00, slot 1 = Q1 5:00-10:00, slot 2 = Q2 0:00-5:00, etc.
+
+  const ROSTER = [
+    { num: '12', name: 'Tilly' },
+    { num: '13', name: 'Sam' },
+    { num: '14', name: 'Akshara' },
+    { num: '15', name: 'Zara' },
+    { num: '22', name: 'Zoe' },
+    { num: '28', name: 'Lexi' },
+    { num: '29', name: 'Charlotte' },
+    { num: '32', name: 'Bella' },
+    { num: '56', name: 'Grace' },
+    { num: '97', name: 'Anneliese' },
+  ];
+
+  const selected = new Set();
+
+  function buildRoster() {
+    const grid = document.getElementById('roster-grid');
+    grid.innerHTML = '';
+    ROSTER.forEach((p, i) => {
+      const el = document.createElement('div');
+      el.className = 'player-toggle';
+      el.dataset.idx = i;
+      el.innerHTML = `<span class="jersey">#${p.num}</span><span class="pname">${p.name}</span><span class="check"></span>`;
+      el.addEventListener('click', () => togglePlayer(i, el));
+      grid.appendChild(el);
+    });
+    updateStatus();
+  }
+
+  function togglePlayer(i, el) {
+    if (selected.has(i)) {
+      selected.delete(i);
+      el.classList.remove('selected');
+    } else {
+      selected.add(i);
+      el.classList.add('selected');
+    }
+    updateStatus();
+  }
+
+  function updateStatus() {
+    const n = selected.size;
+    const countEl = document.getElementById('sel-count');
+    const hintEl = document.getElementById('sel-hint');
+    const btn = document.getElementById('btn-generate');
+    const valid = n >= 6 && n <= 9;
+
+    countEl.textContent = `${n} selected`;
+    countEl.className = 'selection-count ' + (valid ? 'valid' : 'invalid');
+
+    if (n < 6) hintEl.textContent = `Select ${6 - n} more`;
+    else if (n > 9) hintEl.textContent = `Deselect ${n - 9} — max 9`;
+    else hintEl.textContent = `Ready to generate`;
+
+    btn.disabled = !valid;
+    btn.style.opacity = valid ? '1' : '0.4';
+    btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+  }
+
+  function getNames() {
+    return [...selected].sort((a, b) => a - b).map(i => `${ROSTER[i].num} ${ROSTER[i].name}`);
+  }
+
+  function buildSchedule(n) {
+    const SLOTS = 8;
+    const ON = 5;
+    const OFF = n - ON;
+
+    if (OFF === 0) {
+      // 5 players exactly — all on court every slot
+      return Array.from({ length: SLOTS }, () => Array.from({ length: n }, (_, i) => i));
+    }
+
+    const benchCount = new Array(n).fill(0);
+    const lastBenched = new Array(n).fill(-2);
+    const schedule = [];
+
+    for (let slot = 0; slot < SLOTS; slot++) {
+      // Players eligible to be benched this slot (not benched last slot)
+      const eligible = Array.from({ length: n }, (_, i) => i)
+        .filter(i => lastBenched[i] !== slot - 1);
+
+      // Sort by bench count ascending (bench those with most court time first), randomize ties
+      eligible.sort((a, b) => {
+        const d = benchCount[a] - benchCount[b];
+        return d !== 0 ? d : Math.random() - 0.5;
+      });
+
+      const benched = new Set(eligible.slice(0, OFF));
+      const onCourt = Array.from({ length: n }, (_, i) => i).filter(i => !benched.has(i));
+      schedule.push(onCourt);
+
+      benched.forEach(i => {
+        benchCount[i]++;
+        lastBenched[i] = slot;
+      });
+    }
+
+    return schedule;
+  }
+
+  function slotInfo(slot) {
+    const q = Math.floor(slot / 2) + 1;
+    const half = slot % 2; // 0 = first 5 min, 1 = second 5 min
+    return { q, half, isQStart: half === 0 };
+  }
+
+  function generate() {
+    const names = getNames();
+    const n = names.length;
+    const schedule = buildSchedule(n);
+
+    renderSubs(names, schedule);
+    renderGrid(names, schedule);
+    renderStats(names, schedule);
+
+    const out = document.getElementById('output');
+    out.style.display = 'block';
+    out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderSubs(names, schedule) {
+    const n = names.length;
+    let html = '';
+
+    for (let q = 1; q <= 4; q++) {
+      const slots = [2 * (q - 1), 2 * (q - 1) + 1];
+      html += `<div class="quarter-section">`;
+      html += `<div class="quarter-header"><span class="quarter-badge">Q${q}</span><span class="quarter-subline">Minutes ${(q-1)*10}:00 – ${q*10}:00</span></div>`;
+
+      slots.forEach(slot => {
+        const curr = schedule[slot];
+        const prev = slot > 0 ? schedule[slot - 1] : null;
+        const currSet = new Set(curr);
+        const { half } = slotInfo(slot);
+        const timeLabel = half === 0 ? 'Start' : '+5:00';
+
+        if (!prev || half === 0) {
+          // Show full lineup at quarter start (or game start)
+          const bench = Array.from({ length: n }, (_, i) => i).filter(i => !currSet.has(i));
+          html += `<div class="lineup-block">`;
+          html += `<div class="lineup-label">${slot === 0 ? 'Game Start' : `Q${q} Start`}</div>`;
+          html += `<div class="lineup-names">`;
+          curr.forEach(i => { html += `<span class="lineup-chip">${names[i]}</span>`; });
+          bench.forEach(i => { html += `<span class="bench-chip">${names[i]} (bench)</span>`; });
+          html += `</div></div>`;
+
+          // If there are subs from prev quarter end → this quarter start, show them
+          if (prev) {
+            const prevSet = new Set(prev);
+            const ins = curr.filter(i => !prevSet.has(i));
+            const outs = prev.filter(i => !currSet.has(i));
+            if (ins.length > 0) {
+              html += `<div class="sub-block">`;
+              html += `<div class="sub-time-pill">Q${q}<br>Start</div>`;
+              html += `<div class="sub-content">`;
+              for (let k = 0; k < ins.length; k++) {
+                html += `<div class="sub-lineup-row"><span class="sub-in-label">IN</span><span class="sub-name-in">${names[ins[k]]}</span><span class="sub-separator">for</span><span class="sub-out-label">OUT</span><span class="sub-name-out">${names[outs[k]]}</span></div>`;
+              }
+              html += `</div></div>`;
+            }
+          }
+        } else {
+          // Mid-quarter slot — only show if there are changes
+          const prevSet = new Set(prev);
+          const ins = curr.filter(i => !prevSet.has(i));
+          const outs = prev.filter(i => !currSet.has(i));
+          if (ins.length > 0) {
+            html += `<div class="sub-block">`;
+            html += `<div class="sub-time-pill">${timeLabel}</div>`;
+            html += `<div class="sub-content">`;
+            for (let k = 0; k < ins.length; k++) {
+              html += `<div class="sub-lineup-row"><span class="sub-in-label">IN</span><span class="sub-name-in">${names[ins[k]]}</span><span class="sub-separator">for</span><span class="sub-out-label">OUT</span><span class="sub-name-out">${names[outs[k]]}</span></div>`;
+            }
+            html += `</div></div>`;
+          }
+        }
+      });
+
+      html += `</div>`;
+    }
+
+    document.getElementById('subs-content').innerHTML = html;
+  }
+
+  function renderGrid(names, schedule) {
+    const n = names.length;
+    let html = '<thead><tr><th>Time</th>';
+    names.forEach(name => { html += `<th>${name}</th>`; });
+    html += '</tr></thead><tbody>';
+
+    schedule.forEach((onCourt, slot) => {
+      const { q, half } = slotInfo(slot);
+      const isQStart = half === 0;
+      const timeLabel = isQStart ? `Q${q} Start` : `Q${q} +5:00`;
+      html += `<tr class="${isQStart ? 'q-start' : ''}">`;
+      html += `<td class="time-cell">${timeLabel}</td>`;
+      const onSet = new Set(onCourt);
+      for (let i = 0; i < n; i++) {
+        html += `<td class="${onSet.has(i) ? 'on' : 'off'}">${onSet.has(i) ? 'ON' : '—'}</td>`;
+      }
+      html += '</tr>';
+    });
+
+    html += '</tbody>';
+    document.getElementById('grid-table').innerHTML = html;
+  }
+
+  function renderStats(names, schedule) {
+    const n = names.length;
+    const playSlots = new Array(n).fill(0);
+    const benchSlots = new Array(n).fill(0);
+
+    schedule.forEach(onCourt => {
+      const onSet = new Set(onCourt);
+      for (let i = 0; i < n; i++) {
+        if (onSet.has(i)) playSlots[i]++;
+        else benchSlots[i]++;
+      }
+    });
+
+    const target = Math.round((40 * 5) / n);
+    let html = '';
+    names.forEach((name, i) => {
+      const mins = playSlots[i] * 5;
+      const diff = mins - target;
+      const diffStr = diff === 0 ? '' : (diff > 0 ? `+${diff}m` : `${diff}m`);
+      html += `
+        <div class="stat-card">
+          <div class="stat-name">${name}</div>
+          <div class="stat-minutes">${mins}</div>
+          <div class="stat-label">minutes played${diffStr ? ` (${diffStr})` : ''}</div>
+          <div class="stat-bench">${benchSlots[i] * 5}m on bench</div>
+        </div>`;
+    });
+    document.getElementById('stats-content').innerHTML = html;
+  }
+
+  // Init
+  buildRoster();
+</script>
+</body>
+</html>
