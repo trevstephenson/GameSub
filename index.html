@@ -57,6 +57,8 @@
     .sub-out-label { color: #f87171; font-weight: 700; font-size: 0.7rem; }
     .sub-name-in { color: #4ade80; font-weight: 600; }
     .sub-name-out { color: #f87171; font-weight: 600; }
+    .sub-stays-label { color: #93c5fd; font-weight: 700; font-size: 0.7rem; }
+    .sub-name-stay { color: #93c5fd; font-weight: 600; }
     .sub-separator { color: #334155; }
 
     .lineup-block { background: #0f172a; border-radius: 8px; padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; }
@@ -103,6 +105,7 @@
       .bench-chip { background: #f8d7da !important; color: #721c24 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .sub-name-in { color: #155724 !important; }
       .sub-name-out { color: #721c24 !important; }
+      .sub-stays-label, .sub-name-stay { color: #1e40af !important; }
       .quarter-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .stat-minutes { color: #155724 !important; }
     }
@@ -308,35 +311,25 @@
           bench.forEach(i => { html += `<span class="bench-chip">${names[i]} (bench)</span>`; });
           html += `</div></div>`;
 
-          // If there are subs from prev quarter end → this quarter start, show them
-          if (prev) {
-            const prevSet = new Set(prev);
-            const ins = curr.filter(i => !prevSet.has(i));
-            const outs = prev.filter(i => !currSet.has(i));
-            if (ins.length > 0) {
-              html += `<div class="sub-block">`;
-              html += `<div class="sub-time-pill">Q${q}<br>Start</div>`;
-              html += `<div class="sub-content">`;
-              for (let k = 0; k < ins.length; k++) {
-                html += `<div class="sub-lineup-row"><span class="sub-in-label">IN</span><span class="sub-name-in">${names[ins[k]]}</span><span class="sub-separator">for</span><span class="sub-out-label">OUT</span><span class="sub-name-out">${names[outs[k]]}</span></div>`;
-              }
-              html += `</div></div>`;
-            }
-          }
         } else {
-          // Mid-quarter slot — only show if there are changes
+          // Mid-quarter (+5:00) slot — always show; include subs if any, plus who stays on court
           const prevSet = new Set(prev);
           const ins = curr.filter(i => !prevSet.has(i));
           const outs = prev.filter(i => !currSet.has(i));
-          if (ins.length > 0) {
-            html += `<div class="sub-block">`;
-            html += `<div class="sub-time-pill">${timeLabel}</div>`;
-            html += `<div class="sub-content">`;
-            for (let k = 0; k < ins.length; k++) {
-              html += `<div class="sub-lineup-row"><span class="sub-in-label">IN</span><span class="sub-name-in">${names[ins[k]]}</span><span class="sub-separator">for</span><span class="sub-out-label">OUT</span><span class="sub-name-out">${names[outs[k]]}</span></div>`;
-            }
-            html += `</div></div>`;
+          const stays = curr.filter(i => prevSet.has(i));
+          html += `<div class="sub-block">`;
+          html += `<div class="sub-time-pill">${timeLabel}</div>`;
+          html += `<div class="sub-content">`;
+          for (let k = 0; k < ins.length; k++) {
+            html += `<div class="sub-lineup-row"><span class="sub-in-label">IN</span><span class="sub-name-in">${names[ins[k]]}</span><span class="sub-separator">for</span><span class="sub-out-label">OUT</span><span class="sub-name-out">${names[outs[k]]}</span></div>`;
           }
+          html += `<div class="sub-lineup-row"><span class="sub-stays-label">STAYS</span>`;
+          stays.forEach((i, k) => {
+            html += `<span class="sub-name-stay">${names[i]}</span>`;
+            if (k < stays.length - 1) html += `<span class="sub-separator">&middot;</span>`;
+          });
+          html += `</div>`;
+          html += `</div></div>`;
         }
       });
 
