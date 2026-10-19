@@ -31,6 +31,15 @@
     .player-toggle .check { margin-left: auto; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #334155; flex-shrink: 0; transition: background 0.15s, border-color 0.15s; }
     .player-toggle.selected .check { background: #4ade80; border-color: #4ade80; }
 
+    /* Starting 5 picker */
+    .starter-section { border-top: 1px solid #334155; padding-top: 1.1rem; margin-bottom: 1rem; }
+    .starter-empty { font-size: 0.8rem; color: #475569; font-style: italic; margin-bottom: 1rem; }
+    .player-toggle.starter { background: #3a2410; border-color: #f97316; }
+    .player-toggle.starter .jersey { color: #f97316; }
+    .player-toggle.starter .pname { color: #e2e8f0; }
+    .player-toggle.starter .check { background: #f97316; border-color: #f97316; }
+    .starter-chip { background: #f9731622; color: #fdba74; font-size: 0.6rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; letter-spacing: 0.5px; }
+
     /* Tall / short tags */
     .size-tag { font-size: 0.6rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; margin-left: 4px; letter-spacing: 0.3px; vertical-align: middle; }
     .size-tag.tall { background: #7c3aed33; color: #c4b5fd; }
@@ -69,7 +78,7 @@
     .sub-separator { color: #334155; }
 
     .lineup-block { background: #0f172a; border-radius: 8px; padding: 0.6rem 0.75rem; margin-bottom: 0.4rem; }
-    .lineup-label { font-size: 0.68rem; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.35rem; font-weight: 700; display: flex; gap: 0.6rem; align-items: center; }
+    .lineup-label { font-size: 0.68rem; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.35rem; font-weight: 700; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
     .lineup-names { display: flex; flex-wrap: wrap; gap: 0.35rem; }
     .lineup-chip { background: #16a34a22; color: #4ade80; font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 20px; border: 1px solid #16a34a44; }
     .bench-chip { background: #dc262622; color: #f87171; font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 20px; border: 1px solid #dc262244; }
@@ -113,7 +122,7 @@
       td.mix-cell { background: white !important; color: #333 !important; }
       .lineup-chip { background: #d4edda !important; color: #155724 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .bench-chip { background: #f8d7da !important; color: #721c24 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .size-tag { border: 1px solid #999; background: white !important; color: #333 !important; }
+      .size-tag, .starter-chip { border: 1px solid #999; background: white !important; color: #333 !important; }
       .sub-name-in { color: #155724 !important; }
       .sub-name-out { color: #721c24 !important; }
       .sub-stays-label, .sub-name-stay { color: #1e40af !important; }
@@ -128,7 +137,7 @@
   <div class="header-icon">🏀</div>
   <div class="header-text">
     <h1>Basketball Sub Planner</h1>
-    <p>4 quarters &middot; 10 min each &middot; equal time &middot; max 5 min bench &middot; tall/short mix</p>
+    <p>4 quarters &middot; 10 min each &middot; equal time &middot; max 5 min bench &middot; tall/short mix &middot; pick your starting 5</p>
   </div>
 </header>
 
@@ -138,6 +147,13 @@
     <div class="card-title">Select Players</div>
     <p class="roster-hint">Tap players who are available today. Select 6–9. <span class="size-tag tall">T</span> = taller, <span class="size-tag short">S</span> = shorter.</p>
     <div class="roster-grid" id="roster-grid"></div>
+
+    <div class="starter-section">
+      <div class="card-title">Starting 5</div>
+      <p class="roster-hint">Tap 5 of today's players to start the game. The same 5 will start the 3rd quarter. Leave empty to let the planner choose.</p>
+      <div class="roster-grid" id="starter-grid"></div>
+    </div>
+
     <div class="selection-status">
       <span class="selection-count" id="sel-count">0 selected</span>
       <span class="selection-hint" id="sel-hint">Select 6 to 9 players</span>
@@ -179,18 +195,21 @@
   // tall: false = one of the shorter players
   // >>> Update these to match your team <<<
   const ROSTER = [
-    { num: '19', name: 'Asha',     tall: false  },
-    { num: '22', name: 'Ailyn',       tall: false },
-    { num: '31', name: 'Claire',   tall: true },
-    { num: '32', name: 'Ally.S',      tall: true  },
-    { num: '34', name: 'Emeila.S',       tall: true },
-    { num: '36', name: 'Alice',      tall: false  },
-    { num: '39', name: 'Sarah', tall: false },
-    { num: '41', name: 'Alexis (Lexi)',     tall: false  },
-    { num: '58', name: 'Alina',     tall: true },
+    { num: '19', name: 'Asha',          tall: false },
+    { num: '22', name: 'Ailyn',         tall: false },
+    { num: '31', name: 'Claire',        tall: true  },
+    { num: '32', name: 'Ally.S',        tall: true  },
+    { num: '34', name: 'Emeila.S',      tall: true  },
+    { num: '36', name: 'Alice',         tall: false },
+    { num: '39', name: 'Sarah',         tall: false },
+    { num: '41', name: 'Alexis (Lexi)', tall: false },
+    { num: '58', name: 'Alina',         tall: true  },
   ];
 
+  const STARTER_SLOTS = [0, 4]; // Game start and Q3 start
+
   const selected = new Set();
+  const starters = new Set();
 
   function sizeTag(tall) {
     return tall
@@ -209,33 +228,64 @@
       el.addEventListener('click', () => togglePlayer(i, el));
       grid.appendChild(el);
     });
+    renderStarterPicker();
     updateStatus();
   }
 
   function togglePlayer(i, el) {
     if (selected.has(i)) {
       selected.delete(i);
+      starters.delete(i); // can't start if not playing
       el.classList.remove('selected');
     } else {
       selected.add(i);
       el.classList.add('selected');
     }
+    renderStarterPicker();
     updateStatus();
+  }
+
+  function renderStarterPicker() {
+    const grid = document.getElementById('starter-grid');
+    grid.innerHTML = '';
+    const avail = [...selected].sort((a, b) => a - b);
+    if (avail.length === 0) {
+      grid.innerHTML = '<div class="starter-empty">Select today\'s players above first.</div>';
+      return;
+    }
+    avail.forEach(i => {
+      const p = ROSTER[i];
+      const el = document.createElement('div');
+      el.className = 'player-toggle' + (starters.has(i) ? ' starter' : '');
+      el.innerHTML = `<span class="jersey">#${p.num}</span><span class="pname">${p.name}</span>${sizeTag(p.tall)}<span class="check"></span>`;
+      el.addEventListener('click', () => {
+        if (starters.has(i)) starters.delete(i);
+        else if (starters.size < 5) starters.add(i);
+        renderStarterPicker();
+        updateStatus();
+      });
+      grid.appendChild(el);
+    });
   }
 
   function updateStatus() {
     const n = selected.size;
+    const s = starters.size;
     const countEl = document.getElementById('sel-count');
     const hintEl = document.getElementById('sel-hint');
     const btn = document.getElementById('btn-generate');
-    const valid = n >= 6 && n <= 9;
+    const countOk = n >= 6 && n <= 9;
+    const startersOk = s === 0 || s === 5;
+    const valid = countOk && startersOk;
 
     const tallCount = [...selected].filter(i => ROSTER[i].tall).length;
-    countEl.textContent = `${n} selected (${tallCount} tall · ${n - tallCount} short)`;
+    countEl.textContent = `${n} selected (${tallCount} tall · ${n - tallCount} short) · ${s}/5 starters`;
     countEl.className = 'selection-count ' + (valid ? 'valid' : 'invalid');
 
     if (n < 6) hintEl.textContent = `Select ${6 - n} more`;
     else if (n > 9) hintEl.textContent = `Deselect ${n - 9} — max 9`;
+    else if (!startersOk) hintEl.textContent = `Pick ${5 - s} more starter${5 - s === 1 ? '' : 's'} (or clear them all)`;
+    else if (s === 0) hintEl.textContent = `Ready — planner will choose starters`;
     else hintEl.textContent = `Ready to generate`;
 
     btn.disabled = !valid;
@@ -243,11 +293,12 @@
     btn.style.cursor = valid ? 'pointer' : 'not-allowed';
   }
 
-  // Returns the selected players in roster order: { label, tall }
+  // Returns the selected players in roster order: { label, tall, starter }
   function getPlayers() {
     return [...selected].sort((a, b) => a - b).map(i => ({
       label: `${ROSTER[i].num} ${ROSTER[i].name}`,
       tall: ROSTER[i].tall,
+      starter: starters.has(i),
     }));
   }
 
@@ -277,12 +328,13 @@
 
   /*
    * Builds an 8-slot schedule that:
+   *   0. if a starting 5 is given, uses it at game start and Q3 start
    *   1. never benches anyone for two slots in a row (max 5 min on the bench)
    *   2. keeps playing time as equal as possible (bench counts differ by at most 1)
    *   3. keeps the on-court tall/short ratio close to the team's ratio
    * It runs many randomised attempts and keeps the one with the best mix.
    */
-  function buildSchedule(tallFlags) {
+  function buildSchedule(tallFlags, starterFlags) {
     const n = tallFlags.length;
     const SLOTS = 8;
     const ON = 5;
@@ -293,56 +345,91 @@
       return Array.from({ length: SLOTS }, () => all.slice());
     }
 
+    starterFlags = starterFlags || new Array(n).fill(false);
+    const hasStarters = starterFlags.filter(Boolean).length === ON;
+    const startLineup = all.filter(i => starterFlags[i]);
+    const startBench = all.filter(i => !starterFlags[i]);
+    const isFixed = slot => hasStarters && STARTER_SLOTS.includes(slot);
+
     const totalTall = tallFlags.filter(Boolean).length;
     const idealTall = (ON * totalTall) / n;
     const minBench = Math.floor((SLOTS * OFF) / n);
     const maxBench = Math.ceil((SLOTS * OFF) / n);
     const ATTEMPTS = 1500;
 
-    let best = null;
-    let bestScore = Infinity;
-
-    for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-      const benchCount = new Array(n).fill(0);
-      const lastBenched = new Array(n).fill(-2);
-      const schedule = [];
-      let score = 0;
-      let ok = true;
-
-      for (let slot = 0; slot < SLOTS; slot++) {
-        // Can be benched: wasn't benched last slot, hasn't hit their bench quota
-        const eligible = all.filter(i => lastBenched[i] !== slot - 1 && benchCount[i] < maxBench);
-        if (eligible.length < OFF) { ok = false; break; }
-
-        let pickOn = null, pickBench = null, pickScore = Infinity;
-        for (const bench of combinations(eligible, OFF)) {
-          const benchSet = new Set(bench);
-          const onCourt = all.filter(i => !benchSet.has(i));
-          const s =
-            mixPenalty(onCourt, tallFlags, idealTall, totalTall, n) * 4 + // mix matters most
-            bench.reduce((sum, i) => sum + benchCount[i], 0) +            // bench those who've sat least
-            Math.random() * 2;                                            // variety between runs
-          if (s < pickScore) { pickScore = s; pickOn = onCourt; pickBench = bench; }
-        }
-
-        schedule.push(pickOn);
-        score += mixPenalty(pickOn, tallFlags, idealTall, totalTall, n);
-        pickBench.forEach(i => { benchCount[i]++; lastBenched[i] = slot; });
-      }
-
-      if (!ok) continue;
-      if (benchCount.some(c => c < minBench)) continue; // unequal time — reject
-
-      if (score < bestScore) {
-        bestScore = score;
-        best = schedule;
-      }
+    // Bench slots still owed to a non-starter by a fixed slot later in the game
+    function reserved(i, slot) {
+      if (!hasStarters || starterFlags[i]) return 0;
+      return STARTER_SLOTS.filter(s => s > slot).length;
     }
 
-    return best || buildScheduleSimple(n);
+    function search(maxB, strict) {
+      let best = null;
+      let bestScore = Infinity;
+
+      for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+        const noise = attempt % 2 === 0 ? 2 : 12; // some runs explore harder
+        const benchCount = new Array(n).fill(0);
+        const lastBenched = new Array(n).fill(-2);
+        const schedule = [];
+        let score = 0;
+        let ok = true;
+
+        for (let slot = 0; slot < SLOTS; slot++) {
+          let pickOn, pickBench;
+
+          if (isFixed(slot)) {
+            // Starting 5 on court, everyone else sits
+            if (startBench.some(i => lastBenched[i] === slot - 1 || benchCount[i] >= maxB)) { ok = false; break; }
+            pickOn = startLineup.slice();
+            pickBench = startBench.slice();
+          } else {
+            // Can be benched: wasn't benched last slot, won't be benched next slot
+            // because of the starting 5, and still has bench quota left
+            const eligible = all.filter(i =>
+              lastBenched[i] !== slot - 1 &&
+              !(isFixed(slot + 1) && !starterFlags[i]) &&
+              benchCount[i] + reserved(i, slot) < maxB
+            );
+            if (eligible.length < OFF) { ok = false; break; }
+
+            let pickScore = Infinity;
+            for (const bench of combinations(eligible, OFF)) {
+              const benchSet = new Set(bench);
+              const onCourt = all.filter(i => !benchSet.has(i));
+              const s =
+                mixPenalty(onCourt, tallFlags, idealTall, totalTall, n) * 4 + // mix matters most
+                bench.reduce((sum, i) => sum + benchCount[i], 0) +            // bench those who've sat least
+                Math.random() * noise;                                        // variety between runs
+              if (s < pickScore) { pickScore = s; pickOn = onCourt; pickBench = bench; }
+            }
+          }
+
+          schedule.push(pickOn);
+          score += mixPenalty(pickOn, tallFlags, idealTall, totalTall, n);
+          pickBench.forEach(i => { benchCount[i]++; lastBenched[i] = slot; });
+        }
+
+        if (!ok) continue;
+        const spread = Math.max(...benchCount) - Math.min(...benchCount);
+        if (strict && benchCount.some(c => c < minBench)) continue; // unequal time — reject
+        if (!strict) score += spread * 100; // relaxed: still prefer the most equal
+
+        if (score < bestScore) {
+          bestScore = score;
+          best = schedule;
+        }
+      }
+      return best;
+    }
+
+    return search(maxBench, true)
+      || search(maxBench + 1, false)
+      || search(SLOTS, false)
+      || buildScheduleSimple(n);
   }
 
-  // Original algorithm (ignores height) — used only as a fallback.
+  // Original algorithm (ignores height and starters) — used only as a last resort.
   function buildScheduleSimple(n) {
     const SLOTS = 8, ON = 5, OFF = n - ON;
     const benchCount = new Array(n).fill(0);
@@ -371,12 +458,16 @@
     return { text: `${t}T · ${s}S`, warn: t === 0 || s === 0 };
   }
 
+  let lastHasStarters = false;
+
   function generate() {
     const players = getPlayers();
     const names = players.map(p => p.label);
     const tallFlags = players.map(p => p.tall);
+    const starterFlags = players.map(p => p.starter);
+    lastHasStarters = starterFlags.filter(Boolean).length === 5;
     const display = players.map(p => `${p.label}${sizeTag(p.tall)}`);
-    const schedule = buildSchedule(tallFlags);
+    const schedule = buildSchedule(tallFlags, starterFlags);
 
     renderSubs(display, tallFlags, schedule);
     renderGrid(display, tallFlags, schedule);
@@ -404,12 +495,13 @@
         const timeLabel = half === 0 ? 'Start' : '+5:00';
         const mix = mixSummary(curr, tallFlags);
         const mixHtml = `<span class="mix-note${mix.warn ? ' warn' : ''}">On court: ${mix.text}</span>`;
+        const starterHtml = lastHasStarters && STARTER_SLOTS.includes(slot) ? '<span class="starter-chip">STARTING 5</span>' : '';
 
         if (!prev || half === 0) {
           // Show full lineup at quarter start (or game start)
           const bench = Array.from({ length: n }, (_, i) => i).filter(i => !currSet.has(i));
           html += `<div class="lineup-block">`;
-          html += `<div class="lineup-label">${slot === 0 ? 'Game Start' : `Q${q} Start`} ${mixHtml}</div>`;
+          html += `<div class="lineup-label">${slot === 0 ? 'Game Start' : `Q${q} Start`} ${starterHtml} ${mixHtml}</div>`;
           html += `<div class="lineup-names">`;
           curr.forEach(i => { html += `<span class="lineup-chip">${names[i]}</span>`; });
           bench.forEach(i => { html += `<span class="bench-chip">${names[i]} (bench)</span>`; });
@@ -453,7 +545,8 @@
     schedule.forEach((onCourt, slot) => {
       const { q, half } = slotInfo(slot);
       const isQStart = half === 0;
-      const timeLabel = isQStart ? `Q${q} Start` : `Q${q} +5:00`;
+      const star = lastHasStarters && STARTER_SLOTS.includes(slot) ? ' ★' : '';
+      const timeLabel = (isQStart ? `Q${q} Start` : `Q${q} +5:00`) + star;
       const mix = mixSummary(onCourt, tallFlags);
       html += `<tr class="${isQStart ? 'q-start' : ''}">`;
       html += `<td class="time-cell">${timeLabel}</td>`;
